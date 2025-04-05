@@ -1,231 +1,167 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Гендер-тотализатор</title>
+  <meta charset="UTF-8">
+  <title>Гендер Тотализатор</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #fdf6fb;
-      color: #333;
-      padding: 20px;
-      max-width: 700px;
-      margin: auto;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #ffe0f0, #e0f0ff);
+      margin: 0;
+      padding: 2rem;
+      color: #444;
     }
 
-    h1, h2 {
-      color: #cc6699;
+    h1 {
+      text-align: center;
+      color: #d63384;
     }
 
-    label, select, input {
-      margin: 5px 0;
-      display: block;
+    form {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 2rem;
     }
 
-    input, select {
-      padding: 5px;
-      border-radius: 6px;
+    input, select, button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
       border: 1px solid #ccc;
     }
 
     button {
-      padding: 6px 12px;
-      background-color: #66ccff;
+      background-color: #d63384;
       color: white;
       border: none;
-      border-radius: 6px;
       cursor: pointer;
+      transition: background-color 0.2s;
     }
 
     button:hover {
-      background-color: #55bbee;
+      background-color: #c2186a;
     }
 
-    .bet-entry {
-      background: #ffe6f0;
-      padding: 6px;
-      margin: 4px 0;
-      border: 1px solid #ffcce5;
-      border-radius: 6px;
+    .bet-list {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .bet-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: #fff0f5;
+      border: 1px solid #ffc0cb;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
     }
 
-    .winner {
-      background: #e0ffe0;
-      padding: 6px;
-      margin-top: 5px;
-      border-radius: 6px;
+    .bet-item span {
+      font-weight: bold;
     }
 
     .delete-btn {
-      background: #ff6666;
+      background-color: #74c0fc;
+      color: #fff;
       border: none;
-      padding: 3px 8px;
-      border-radius: 5px;
-      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 12px;
     }
 
     .delete-btn:hover {
-      background: #dd4444;
+      background-color: #339af0;
     }
   </style>
 </head>
 <body>
-  <h1>Гендер-тотализатор</h1>
+  <h1>Гендер Тотализатор</h1>
 
-  <form id="betForm">
-    <label>
-      Имя:
-      <input name="name" required />
-    </label>
-    <label>
-      Ставка:
-      <select name="choice" required>
-        <option value="м">Мальчик</option>
-        <option value="ж">Девочка</option>
-        <option value="двойня">Двойня</option>
-      </select>
-    </label>
-    <button type="submit">Сделать ставку (5 руб)</button>
-  </form>
-
-  <h2>Ставки:</h2>
-  <div id="betList"></div>
-
-  <h2>Завершить игру</h2>
-  <label>
-    Результат:
-    <select id="finalResult">
+  <form id="bet-form">
+    <input type="text" id="name" placeholder="Ваше имя" required>
+    <select id="choice">
       <option value="м">Мальчик</option>
       <option value="ж">Девочка</option>
       <option value="двойня">Двойня</option>
     </select>
-  </label>
-  <button id="finishGame">Рассчитать выигрыши</button>
+    <button type="submit">Сделать ставку (5₽)</button>
+  </form>
 
-  <h2>Результаты:</h2>
-  <div id="results"></div>
+  <div class="bet-list" id="bet-list"></div>
 
-
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
 
   <script>
-    const betForm = document.getElementById('betForm');
-    const betList = document.getElementById('betList');
-    const resultSelect = document.getElementById('finalResult');
-    const finishButton = document.getElementById('finishGame');
-    const resultsDiv = document.getElementById('results');
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrvZ9tZD5M-n3X-2lJXyV6C_qK4w4TLMQ",
+      authDomain: "forest-8fcf9.firebaseapp.com",
+      projectId: "forest-8fcf9",
+      storageBucket: "forest-8fcf9.appspot.com",
+      messagingSenderId: "435012597352",
+      appId: "1:435012597352:web:e5a5534e0646891194addd",
+      measurementId: "G-5GQHJ7NJBF",
+      databaseURL: "https://forest-8fcf9-default-rtdb.europe-west1.firebasedatabase.app"
+    };
 
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    let bets = loadBets();
+    const form = document.getElementById('bet-form');
+    const list = document.getElementById('bet-list');
 
-    function saveBets() {
-      localStorage.setItem('genderBets', JSON.stringify(bets));
-    }
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const choice = document.getElementById('choice').value;
+      if (!name) return;
+
+      const bet = { name, choice };
+      db.ref("bets").push(bet).then(() => {
+        form.reset();
+        loadBets();
+      });
+    });
 
     function loadBets() {
-      const raw = localStorage.getItem('genderBets');
-      return raw ? JSON.parse(raw) : [];
-    }
+      db.ref("bets").once("value").then(snapshot => {
+        const data = snapshot.val() || {};
+        const grouped = {};
 
-    function renderBets() {
-      betList.replaceChildren();
-
-      const grouped = groupBets();
-
-      const total = document.createElement('div');
-      total.style.fontWeight = 'bold';
-      total.textContent = `Всего ставок: ${bets.length} | Банк: ${bets.length * 5} руб`;
-      betList.appendChild(total);
-
-      grouped.forEach((user, name) => {
-        const div = document.createElement('div');
-        div.className = 'bet-entry';
-
-        const betCounts = Object.entries(user.choices)
-          .map(([type, count]) => `${type}: ${count}`)
-          .join(', ');
-
-        div.textContent = `${name} — ${betCounts}`;
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Удалить';
-        deleteBtn.addEventListener('click', () => {
-          bets = bets.filter(b => b.name !== name);
-          saveBets();
-          renderBets();
-          resultsDiv.replaceChildren();
+        Object.entries(data).forEach(([id, bet]) => {
+          const key = bet.name + "-" + bet.choice;
+          if (!grouped[key]) {
+            grouped[key] = { ...bet, count: 0, ids: [] };
+          }
+          grouped[key].count += 1;
+          grouped[key].ids.push(id);
         });
 
-        div.appendChild(deleteBtn);
-        betList.appendChild(div);
+        list.replaceChildren();
+        Object.values(grouped).forEach(bet => {
+          const div = document.createElement('div');
+          div.className = 'bet-item';
+          div.innerHTML = `
+            <span>${bet.name} → ${bet.choice} × ${bet.count}</span>
+            <button class="delete-btn">Удалить</button>
+          `;
+          div.querySelector('button').addEventListener('click', () => {
+            const updates = {};
+            bet.ids.forEach(id => updates[id] = null);
+            db.ref("bets").update(updates).then(loadBets);
+          });
+          list.appendChild(div);
+        });
       });
     }
 
-    function groupBets() {
-      const map = new Map();
-      for (const bet of bets) {
-        const { name, choice } = bet;
-        if (!map.has(name)) {
-          map.set(name, { total: 0, choices: {} });
-        }
-        const user = map.get(name);
-        user.total += 1;
-        user.choices[choice] = (user.choices[choice] || 0) + 1;
-      }
-      return map;
-    }
-
-    betForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const formData = new FormData(betForm);
-      const name = formData.get('name').trim();
-      const choice = formData.get('choice');
-      if (!name) return;
-
-      bets.push({ name, choice });
-      saveBets();
-      renderBets();
-      betForm.reset();
-    });
-
-    finishButton.addEventListener('click', () => {
-      const result = resultSelect.value;
-      const totalPot = bets.length * 5;
-      const winners = bets.filter(b => b.choice === result);
-      const winnerMap = new Map();
-
-      for (const bet of winners) {
-        winnerMap.set(bet.name, (winnerMap.get(bet.name) || 0) + 1);
-      }
-
-      const totalWinningStakes = Array.from(winnerMap.values()).reduce((a, b) => a + b, 0);
-      const winningPot = totalPot * 0.5;
-
-      resultsDiv.replaceChildren();
-
-      if (winners.length === 0) {
-        const div = document.createElement('div');
-        div.textContent = 'Нет победителей.';
-        resultsDiv.appendChild(div);
-        return;
-      }
-
-      for (const [name, stakeCount] of winnerMap.entries()) {
-        const winAmount = (stakeCount / totalWinningStakes) * winningPot;
-        const div = document.createElement('div');
-        div.className = 'winner';
-        div.textContent = `${name}: ${winAmount.toFixed(2)} руб (${stakeCount} ставок)`;
-        resultsDiv.appendChild(div);
-      }
-    });
-
-
-    renderBets();
+    loadBets();
   </script>
 </body>
 </html>
