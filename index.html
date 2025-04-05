@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Гендер-тотализатор</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fdf6fb;
+      color: #333;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      color: #cc6699;
+    }
+
+    label, select, input {
+      margin: 5px 0;
+      display: block;
+    }
+
+    input, select {
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 6px 12px;
+      background-color: #66ccff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #55bbee;
+    }
+
+    .bet-entry {
+      background: #ffe6f0;
+      padding: 6px;
+      margin: 4px 0;
+      border: 1px solid #ffcce5;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .winner {
+      background: #e0ffe0;
+      padding: 6px;
+      margin-top: 5px;
+      border-radius: 6px;
+    }
+
+    .delete-btn {
+      background: #ff6666;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .delete-btn:hover {
+      background: #dd4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Гендер-тотализатор</h1>
+
+  <form id="betForm">
+    <label>
+      Имя:
+      <input name="name" required />
+    </label>
+    <label>
+      Ставка:
+      <select name="choice" required>
+        <option value="м">Мальчик</option>
+        <option value="ж">Девочка</option>
+        <option value="двойня">Двойня</option>
+      </select>
+    </label>
+    <button type="submit">Сделать ставку (5 руб)</button>
+  </form>
+
+  <h2>Ставки:</h2>
+  <div id="betList"></div>
+
+  <h2>Завершить игру</h2>
+  <label>
+    Результат:
+    <select id="finalResult">
+      <option value="м">Мальчик</option>
+      <option value="ж">Девочка</option>
+      <option value="двойня">Двойня</option>
+    </select>
+  </label>
+  <button id="finishGame">Рассчитать выигрыши</button>
+
+  <h2>Результаты:</h2>
+  <div id="results"></div>
+
+
+
+  <script>
+    const betForm = document.getElementById('betForm');
+    const betList = document.getElementById('betList');
+    const resultSelect = document.getElementById('finalResult');
+    const finishButton = document.getElementById('finishGame');
+    const resultsDiv = document.getElementById('results');
+
+
+    let bets = loadBets();
+
+    function saveBets() {
+      localStorage.setItem('genderBets', JSON.stringify(bets));
+    }
+
+    function loadBets() {
+      const raw = localStorage.getItem('genderBets');
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function renderBets() {
+      betList.replaceChildren();
+
+      const grouped = groupBets();
+
+      const total = document.createElement('div');
+      total.style.fontWeight = 'bold';
+      total.textContent = `Всего ставок: ${bets.length} | Банк: ${bets.length * 5} руб`;
+      betList.appendChild(total);
+
+      grouped.forEach((user, name) => {
+        const div = document.createElement('div');
+        div.className = 'bet-entry';
+
+        const betCounts = Object.entries(user.choices)
+          .map(([type, count]) => `${type}: ${count}`)
+          .join(', ');
+
+        div.textContent = `${name} — ${betCounts}`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Удалить';
+        deleteBtn.addEventListener('click', () => {
+          bets = bets.filter(b => b.name !== name);
+          saveBets();
+          renderBets();
+          resultsDiv.replaceChildren();
+        });
+
+        div.appendChild(deleteBtn);
+        betList.appendChild(div);
+      });
+    }
+
+    function groupBets() {
+      const map = new Map();
+      for (const bet of bets) {
+        const { name, choice } = bet;
+        if (!map.has(name)) {
+          map.set(name, { total: 0, choices: {} });
+        }
+        const user = map.get(name);
+        user.total += 1;
+        user.choices[choice] = (user.choices[choice] || 0) + 1;
+      }
+      return map;
+    }
+
+    betForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(betForm);
+      const name = formData.get('name').trim();
+      const choice = formData.get('choice');
+      if (!name) return;
+
+      bets.push({ name, choice });
+      saveBets();
+      renderBets();
+      betForm.reset();
+    });
+
+    finishButton.addEventListener('click', () => {
+      const result = resultSelect.value;
+      const totalPot = bets.length * 5;
+      const winners = bets.filter(b => b.choice === result);
+      const winnerMap = new Map();
+
+      for (const bet of winners) {
+        winnerMap.set(bet.name, (winnerMap.get(bet.name) || 0) + 1);
+      }
+
+      const totalWinningStakes = Array.from(winnerMap.values()).reduce((a, b) => a + b, 0);
+      const winningPot = totalPot * 0.5;
+
+      resultsDiv.replaceChildren();
+
+      if (winners.length === 0) {
+        const div = document.createElement('div');
+        div.textContent = 'Нет победителей.';
+        resultsDiv.appendChild(div);
+        return;
+      }
+
+      for (const [name, stakeCount] of winnerMap.entries()) {
+        const winAmount = (stakeCount / totalWinningStakes) * winningPot;
+        const div = document.createElement('div');
+        div.className = 'winner';
+        div.textContent = `${name}: ${winAmount.toFixed(2)} руб (${stakeCount} ставок)`;
+        resultsDiv.appendChild(div);
+      }
+    });
+
+
+    renderBets();
+  </script>
+</body>
+</html>
