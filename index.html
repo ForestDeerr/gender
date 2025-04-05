@@ -183,9 +183,9 @@
         });
 
         // Обновление информации о банке и призовом фонде
-        totalBankElement.textContent = `${totalBank}₽`;
+        totalBankElement.textContent = `${totalBank} BYN`;
         const prizeFund = totalBank * 0.5;
-        prizeFundElement.textContent = `${prizeFund}₽`;
+        prizeFundElement.textContent = `${prizeFund} BYN`;
       }).catch(error => {
         console.error('Error loading bets:', error);
       });
