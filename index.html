@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Гендер Тотализатор</title>
   <style>
     body {
@@ -76,6 +77,13 @@
     .delete-btn:hover {
       background-color: #339af0;
     }
+
+    .bank-info {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      color: #d63384;
+    }
   </style>
 </head>
 <body>
@@ -93,6 +101,12 @@
 
   <div class="bet-list" id="bet-list"></div>
 
+  <!-- Информация о банке и призовом фонде -->
+  <div class="bank-info">
+    <p>Общий банк: <span id="total-bank">0₽</span></p>
+    <p>Призовой фонд (50%): <span id="prize-fund">0₽</span></p>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
@@ -107,7 +121,7 @@
       messagingSenderId: "435012597352",
       appId: "1:435012597352:web:e5a5534e0646891194addd",
       measurementId: "G-5GQHJ7NJBF",
-      databaseURL: "https://forest-8fcf9-default-rtdb.europe-west1.firebasedatabase.app"
+      databaseURL: "https://forest-8fcf9-default-rtdb.firebaseio.com"  // Обновленный URL
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -115,6 +129,8 @@
 
     const form = document.getElementById('bet-form');
     const list = document.getElementById('bet-list');
+    const totalBankElement = document.getElementById('total-bank');
+    const prizeFundElement = document.getElementById('prize-fund');
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -122,7 +138,7 @@
       const choice = document.getElementById('choice').value;
       if (!name) return;
 
-      const bet = { name, choice };
+      const bet = { name, choice, amount: 5 };  // Ставка 5₽
       db.ref("bets").push(bet).then(() => {
         form.reset();
         loadBets();
@@ -133,16 +149,23 @@
       db.ref("bets").once("value").then(snapshot => {
         const data = snapshot.val() || {};
         const grouped = {};
+        let totalBank = 0;
 
         Object.entries(data).forEach(([id, bet]) => {
+          console.log(`Bet loaded: ${bet.name} → ${bet.choice} (5₽)`);  // Логирование ставок
           const key = bet.name + "-" + bet.choice;
           if (!grouped[key]) {
             grouped[key] = { ...bet, count: 0, ids: [] };
           }
           grouped[key].count += 1;
           grouped[key].ids.push(id);
+          totalBank += bet.amount;
         });
 
+        // Логируем общий банк
+        console.log(`Total bank: ${totalBank}`);
+
+        // Если есть ставки, то отображаем их
         list.replaceChildren();
         Object.values(grouped).forEach(bet => {
           const div = document.createElement('div');
@@ -158,6 +181,13 @@
           });
           list.appendChild(div);
         });
+
+        // Обновление информации о банке и призовом фонде
+        totalBankElement.textContent = `${totalBank}₽`;
+        const prizeFund = totalBank * 0.5;
+        prizeFundElement.textContent = `${prizeFund}₽`;
+      }).catch(error => {
+        console.error('Error loading bets:', error);
       });
     }
 
