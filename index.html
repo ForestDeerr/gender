@@ -107,6 +107,66 @@
     <p>Призовой фонд (50%): <span id="prize-fund">0 BYN</span></p>
   </div>
 
+<!-- Кнопка открытия модального окна -->
+<div style="text-align: center; margin-top: 1rem;">
+    <button id="rules-btn">📋 Правила</button>
+  </div>
+  
+  <!-- Модальное окно -->
+  <div id="rules-modal" style="display:none; position:fixed; flex-direction: column; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center;">
+    
+    <div style="background:white; overflow: auto; padding:2rem; border-radius:10px; max-width:500px; text-align:left; color:#444; position:relative;">
+      <button id="close-rules" style="display: flex
+      ;
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: #d63384;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          cursor: pointer;
+          justify-content: center;
+          flex-direction: row;
+          align-items: center;">✕</button>
+      <h2 style="color:#d63384;">📌 Суть:</h2>
+      <p>Угадай пол будущего ребёнка (мальчик, девочка или двойня) и получи часть накопленного банка!</p>
+  
+      <h2 style="color:#d63384;">💸 Ставки:</h2>
+      <p>Стоимость одной ставки — <strong>5 рублей</strong>.</p>
+  
+      <h2 style="color:#d63384;">Доступные варианты:</h2>
+      <ul>
+        <li>👦 Мальчик</li>
+        <li>👧 Девочка</li>
+        <li>👶 Двойня</li>
+      </ul>
+  
+      <h2 style="color:#d63384;">🏆 Выигрыш:</h2>
+      <p>50% от общего банка распределяется между победителями.</p>
+      <p>Если победителей несколько — выигрыш делится поровну, но:</p>
+      <p><em>Каждая дополнительная ставка увеличивает долю выигрыша!</em></p>
+      <p><strong>Пример:</strong> У одного человека 2 ставки, у другого 1 — первый получит вдвое больше.</p>
+  
+      <h2 style="color:#d63384;">🗓 Результаты:</h2>
+      <p>Объявление результата произойдёт в памятный для нас день — <strong>день нашей свадьбы 👰🤵 — 22 июня 2025</strong></p>
+  
+      <h2 style="color:#d63384;">✅ Пример расчёта:</h2>
+      <p>В игре участвуют 10 человек, сделано 20 ставок = банк 100 руб.</p>
+      <p>Победный вариант выбрали 4 ставки (у 3-х разных человек: A — 2 ставки, B — 1 ставка, C — 1 ставка).</p>
+      <p>50 руб делятся по долям:</p>
+      <ul>
+        <li>A — 25 руб</li>
+        <li>B — 12.5 руб</li>
+        <li>C — 12.5 руб</li>
+      </ul>
+    </div>
+  </div>
+
+
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
@@ -191,7 +251,24 @@
       });
     }
 
+
+    
     loadBets();
+
+    // Модальное окно с правилами
+document.getElementById('rules-btn').addEventListener('click', () => {
+  document.getElementById('rules-modal').style.display = 'flex';
+});
+
+document.getElementById('close-rules').addEventListener('click', () => {
+  document.getElementById('rules-modal').style.display = 'none';
+});
+
+document.getElementById('rules-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('rules-modal')) {
+    document.getElementById('rules-modal').style.display = 'none';
+  }
+});
   </script>
 </body>
 </html>
