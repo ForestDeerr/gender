@@ -119,4 +119,12 @@ body {
     justify-content: center;
     align-items: center;
   }
+
   
+  button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    pointer-events: none; /* предотвращает наведение и клики */
+    transition: none; /* отключает анимации */
+  }

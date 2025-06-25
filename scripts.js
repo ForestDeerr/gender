@@ -59,7 +59,7 @@ const firebaseConfig = {
         div.className = 'bet-item';
         div.innerHTML = `
           <span>${bet.name} — <strong>${bet.choice}</strong> (${bet.count})</span>
-          <button class="delete-btn">Удалить</button>
+          <button class="delete-btn" disabled>Удалить</button>
         `;
         div.querySelector('.delete-btn').onclick = () => {
           bet.ids.forEach(id => db.ref("bets/" + id).remove());
@@ -89,3 +89,25 @@ const firebaseConfig = {
     if (e.target === rulesModal) rulesModal.style.display = 'none';
   });
   
+
+// Модальное окно "Узнать пол"
+const revealBtn = document.getElementById('reveal-gender-btn');
+const genderModal = document.getElementById('gender-modal');
+const closeGender = document.getElementById('close-gender-modal');
+
+// Показываем модалку
+revealBtn.addEventListener('click', () => {
+  genderModal.style.display = 'flex';
+});
+
+// Закрываем по крестику
+closeGender.addEventListener('click', () => {
+  genderModal.style.display = 'none';
+});
+
+// Закрываем по клику вне содержимого окна
+genderModal.addEventListener('click', (e) => {
+  if (e.target === genderModal) {
+    genderModal.style.display = 'none';
+  }
+});
